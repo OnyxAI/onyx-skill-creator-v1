@@ -1,0 +1,137 @@
+#!/bin/bash
+
+read -e -p "Path of yours skills (default : ~/skills) ? " -i "$HOME/skills" folder
+
+read -p "Name of your skill ? " skill_name
+
+raw_name=${skill_name,,}
+
+mkdir -p $folder/${raw_name}_skill
+
+cp -R skill/* $folder/${raw_name}_skill
+
+read -p "Description of your skill ? " skill_desc
+
+read -p "Author ?" author
+
+read -p "Do you need template (y/n)? " choice1
+case "$choice1" in 
+  y|Y )
+    template=1
+    mv $folder/${raw_name}_skill/controllers/BoilerplateController.py $folder/${raw_name}_skill/controllers/${skill_name}Controller.py
+    mv $folder/${raw_name}_skill/templates/boilerplate $folder/${raw_name}_skill/templates/${raw_name}
+    echo "You choose template";;
+  n|N ) 
+    template=0
+    sed -i '/"index":"boilerplate.index",/d' $folder/${raw_name}_skill/package.json
+    sed -i '/"config":"boilerplate.config"/d' $folder/${raw_name}_skill/package.json
+    find $folder/${raw_name}_skill -type f -exec sed -i -e 's/"data":"",/"data":""/g' {} \;
+    sed -i '/from boilerplate_skill.index import boilerplate/d' $folder/${raw_name}_skill/__init__.py
+    sed -i '/def get_blueprint(self):/d' $folder/${raw_name}_skill/__init__.py
+    sed -i '/return boilerplate/d' $folder/${raw_name}_skill/__init__.py
+    rm -rf $folder/${raw_name}_skill/templates
+    rm -rf $folder/${raw_name}_skill/controllers
+    rm -rf $folder/${raw_name}_skill/index.py
+    echo "No template";;
+  * ) 
+    rm -rf $folder/${raw_name}_skill
+    echo "Invalid"
+    exit 1;;
+esac
+
+find $folder/${raw_name}_skill -type f -exec sed -i -e 's/Boilerplate/'${skill_name}'/g' {} \;
+find $folder/${raw_name}_skill -type f -exec sed -i -e 's/boilerplate/'${raw_name}'/g' {} \;
+
+find $folder/${raw_name}_skill -type f -exec sed -i -e "s/\"description\":\"\"/\"description\":\"$skill_desc\"/g" {} \;
+find $folder/${raw_name}_skill -type f -exec sed -i -e "s/\"author\":\"\"/\"author\":\"$author\"/g" {} \;
+
+
+read -p "Do you need data (y/n)? " choice2
+case "$choice2" in 
+  y|Y ) 
+    find $folder/${raw_name}_skill -type f -exec sed -i -e 's/"data":""/"data":"True"/g' {} \;
+    echo "You choose data";;
+  n|N ) 
+    find $folder/${raw_name}_skill -type f -exec sed -i -e 's/"data":""/"data":"False"/g' {} \;
+    rm -rf $folder/${raw_name}_skill/data
+    echo "No data";;
+  * ) 
+    rm -rf $folder/${raw_name}_skill
+    echo "Invalid"
+    exit 1;;
+esac
+
+read -p "Do you need navbar (y/n)? " choice3
+case "$choice3" in 
+  y|Y )
+    find $folder/${raw_name}_skill -type f -exec sed -i -e 's/"navbar":""/"navbar":"True"/g' {} \;
+    echo "You choose navbar";;
+  n|N ) 
+    find $folder/${raw_name}_skill -type f -exec sed -i -e 's/"navbar":""/"navbar":"False"/g' {} \;
+    rm -rf $folder/${raw_name}_skill/navbar.json
+    echo "No navbar";;
+  * ) 
+    rm -rf $folder/${raw_name}_skill
+    echo "Invalid"
+    exit 1;;
+esac
+
+read -p "Do you need models (y/n)? " choice4
+case "$choice4" in 
+  y|Y )
+    mv $folder/${raw_name}_skill/models/BoilerplateModel.py $folder/${raw_name}_skill/models/${skill_name}Model.py
+    echo "You choose models";;
+  n|N ) 
+    rm -rf $folder/${raw_name}_skill/models
+    echo "No models";;
+  * ) 
+    rm -rf $folder/${raw_name}_skill
+    echo "Invalid"
+    exit 1;;
+esac
+
+
+cd $folder/${raw_name}_skill
+
+read -p "Do you want to upload it on github (y/n)? " choice5
+case "$choice5" in 
+  y|Y )
+    echo "You choose uploading on github"
+    git init
+    read -p "Give your github token : " token
+
+    read -p "Do you want to upload in an organization (y/n)? " choice6
+    case "$choice6" in 
+    y|Y )
+        read -p "Organization name ? " org
+        url=$(curl -H "Authorization: token $token" --data '{"name": "'${raw_name}_skill'"}' https://api.github.com/orgs/${org}/repos | python -c "import sys, json; print(json.load(sys.stdin)['clone_url'])")
+        ;;
+    n|N ) 
+        echo "No Organization"
+        url=$(curl -H "Authorization: token $token" --data '{"name": "'${raw_name}_skill'"}' https://api.github.com/user/repos | python -c "import sys, json; print(json.load(sys.stdin)['clone_url'])")
+        ;;
+    * ) 
+        echo "Invalid"
+        exit 1;;
+    esac
+
+    
+
+
+    git remote add origin $url
+    git add .
+    git commit -m "first commit"
+    git push -u origin master
+
+    echo "Repository url : $url"
+    
+    ;;
+  n|N ) 
+    echo "No github";;
+  * ) 
+    echo "Invalid"
+    exit 1;;
+esac
+
+
+echo "Done. Now you can code !"
