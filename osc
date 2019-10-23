@@ -9,6 +9,7 @@ raw_name=${skill_name,,}
 mkdir -p $folder/${raw_name}_skill
 
 cp -R skill/* $folder/${raw_name}_skill
+cp skill/.gitignore $folder/${raw_name}_skill
 
 read -p "Description of your skill ? " skill_desc
 

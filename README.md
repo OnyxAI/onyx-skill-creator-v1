@@ -15,6 +15,6 @@ chmod +x osc
 ## Usage
 
 ```bash
-./osc create
+./osc
 ```
 
