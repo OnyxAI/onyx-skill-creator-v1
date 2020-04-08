@@ -1,4 +1,4 @@
-# Onyx Skill Creator
+# Onyx Skill Creator for Onyx v1 DEPRECATED
 
 Simply tool to create a skill
 
